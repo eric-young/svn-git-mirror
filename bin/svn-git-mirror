@@ -49,7 +49,9 @@ function initialize {
      
     if [ -d "${DIRECTORY}" ]; then
         echo "Error: The directory already exists, please specify a new directory"
+        exit 1
     fi
+
     
     # make the target directory
     mkdir -p "${DIRECTORY}"

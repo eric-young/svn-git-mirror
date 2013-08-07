@@ -46,11 +46,7 @@ function initialize {
         echo "Missing a required argument"
         usage
     fi
-    
-    echo "Initializing workbench at: ${DIRECTORY}"
-    echo "           SVN repository: ${SVNREPO}"
-    echo "           GIT repository: ${GITREPO}"
-    
+     
     if [ -d "${DIRECTORY}" ]; then
         echo "Error: The directory already exists, please specify a new directory"
     fi
@@ -62,8 +58,10 @@ function initialize {
         exit 1
     fi
 
+    echo "Initializing workbench at: ${DIRECTORY}"
+    echo "           SVN repository: ${SVNREPO}"
+    echo "           GIT repository: ${GITREPO}"    
     
-    # check out the subversion code
     cd "${DIRECTORY}"
     
     # initialize an empty repo
@@ -92,14 +90,18 @@ function update {
         exit 1
     fi
     
+    echo "Updating workbench at: ${DIRECTORY}"
+    
     # change to the workbench directory
     cd "${DIRECTORY}"
     
+    # fetch the updates from SVN    
     git svn fetch
     
+    # and push them to the git origin
     git push origin master
     
-    echo "Updating workbench at: ${DIRECTORY}"
+
 }
 
 

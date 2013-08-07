@@ -1,0 +1,149 @@
+#!/bin/bash -e
+# svn-git-mirror
+#
+#
+#    Copyright 2013 Eric Young
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+#
+
+COMMAND="unknown"
+SVNREPO="unknown"
+GITREPO="unknown"
+DIRECTORY=`pwd`
+
+function usage {
+    echo
+    echo "`basename ${0}` [init|update]"
+    echo "     init    : initialize a workbench directory"
+    echo "               Required arguments:"
+    echo "               -s=<subversion url>"
+    echo "               -g=<git url>"
+    echo "               -d=<workbench directory>"    
+    echo
+    echo "     update  : update a workbench with SVN changes, pull in git changes, and push to git mirror"
+    echo "               Optional arguments:"
+    echo "               -d=<workbench directory>"
+    echo
+    exit 1
+}
+
+function initialize {
+
+    # validate we got the right arguments
+    if [ "${GITREPO}" == "unknown" -o "${SVNREPO}" == "unknown" -o "${DIRECTORY}" == "unknown" ]; then
+        echo "Missing a required argument"
+        usage
+    fi
+    
+    echo "Initializing workbench at: ${DIRECTORY}"
+    echo "           SVN repository: ${SVNREPO}"
+    echo "           GIT repository: ${GITREPO}"
+    
+    if [ -d "${DIRECTORY}" ]; then
+        echo "Error: The directory already exists, please specify a new directory"
+    fi
+    
+    # make the target directory
+    mkdir -p "${DIRECTORY}"
+    if [ ! -d "${DIRECTORY}" ]; then
+        echo "Error: Unable to make the directory: ${DIRECTORY}"
+        exit 1
+    fi
+
+    
+    # check out the subversion code
+    cd "${DIRECTORY}"
+    
+    # initialize an empty repo
+    git init --bare
+    # tell it what svn repo we want 
+    git svn init -s --prefix=svn/  ${SVNREPO}
+    
+    # we should support an authors file. maybe?
+    # git config --add svn.authorsfile '#{authors_file}' if authors_file
+
+    # setup the upstream git repo
+    git remote add origin ${GITREPO}
+    # and configure what goes there
+    git config --add remote.origin.push 'refs/remotes/svn/*:refs/heads/*'
+    # run garbage collection
+    git gc
+    
+}
+
+
+function update {
+    
+    # validate the directory
+    if [ ! -d "${DIRECTORY}" ]; then
+        echo "Error: Unable to find the directory: ${DIRECTORY}"
+        exit 1
+    fi
+    
+    # change to the workbench directory
+    cd "${DIRECTORY}"
+    
+    git svn fetch
+    
+    git push origin master
+    
+    echo "Updating workbench at: ${DIRECTORY}"
+}
+
+
+################################################################
+# main logic
+#
+# make sure we got at least one argument
+if [ "${1}" != "init" -a "${1}" != "update" ]; then
+    usage
+fi
+
+# get the command asked for, should be init or update
+COMMAND=${1}
+shift
+
+
+while getopts "s:g:d:" opt; do
+  case $opt in
+    s)
+      SVNREPO="${OPTARG}"
+      ;;
+    g)
+      GITREPO="${OPTARG}"
+      ;;
+    d)
+      DIRECTORY="${OPTARG}"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      ;;
+  esac
+done
+
+
+# if we are initializing a repo
+if [ "${COMMAND}" == "init" ]; then
+    initialize
+fi
+
+# if we are updating a repo
+if [ "${COMMAND}" == "update" ]; then
+    update
+fi
+
+# done
+exit 0

@@ -21,6 +21,8 @@
 COMMAND="unknown"
 SVNREPO="unknown"
 GITREPO="unknown"
+AUTHORS="unknown"
+STANDARD=" -s "
 DIRECTORY=`pwd`
 
 function usage {
@@ -28,13 +30,16 @@ function usage {
     echo "`basename ${0}` [init|update]"
     echo "     init    : initialize a workbench directory"
     echo "               Required arguments:"
-    echo "               -s=<subversion url>"
-    echo "               -g=<git url>"
-    echo "               -d=<workbench directory>"    
+    echo "                -s <subversion url>"
+    echo "                -g <git url>"
+    echo "                -d <workbench directory>"
+    echo "               Optional arguments"
+    echo "                -a <authors file>"
+    echo "                -n (do NOT assume use of standard svn layout)"
     echo
     echo "     update  : update a workbench with SVN changes, pull in git changes, and push to git mirror"
     echo "               Optional arguments:"
-    echo "               -d=<workbench directory>"
+    echo "                -d <workbench directory>"
     echo
     exit 1
 }
@@ -52,6 +57,13 @@ function initialize {
         exit 1
     fi
 
+    # make sure that we can read teh authors file if specified
+    if [ "${AUTHORS}" != "unknown" ]; then
+        if [ ! -f "${AUTHORS}" ]; then
+            echo "An 'authors' file was specified but cannot be found"
+            exit 1
+        fi
+    fi
     
     # make the target directory
     mkdir -p "${DIRECTORY}"
@@ -69,10 +81,12 @@ function initialize {
     # initialize an empty repo
     git init --bare
     # tell it what svn repo we want 
-    git svn init -s --prefix=svn/  ${SVNREPO}
+    git svn init ${STANDARD} --prefix=svn/  ${SVNREPO}
     
-    # we should support an authors file. maybe?
-    # git config --add svn.authorsfile '#{authors_file}' if authors_file
+    # set the authors file
+    if [ "${AUTHORS}" != "unknown" ]; then
+        git config --add svn.authorsfile "${AUTHORS}"
+    fi
 
     # setup the upstream git repo
     git remote add origin ${GITREPO}
@@ -120,7 +134,7 @@ COMMAND=${1}
 shift
 
 
-while getopts "s:g:d:" opt; do
+while getopts "s:g:d:a:n" opt; do
   case $opt in
     s)
       SVNREPO="${OPTARG}"
@@ -130,6 +144,12 @@ while getopts "s:g:d:" opt; do
       ;;
     d)
       DIRECTORY="${OPTARG}"
+      ;;
+    a)
+      AUTHORS="${OPTARG}"
+      ;;
+    n)
+      STANDARD=" "
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2

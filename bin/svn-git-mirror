@@ -97,7 +97,6 @@ function initialize {
     
 }
 
-
 function update {
     
     # validate the directory
@@ -114,6 +113,15 @@ function update {
     # fetch the updates from SVN    
     git svn fetch
     
+}
+
+function mirror {
+    
+    update
+    
+    # change to the workbench directory
+    cd "${DIRECTORY}"
+      
     # and push them to the git origin
     git push origin master
     
@@ -125,7 +133,7 @@ function update {
 # main logic
 #
 # make sure we got at least one argument
-if [ "${1}" != "init" -a "${1}" != "update" ]; then
+if [ "${1}" != "init" -a "${1}" != "update" -a "${1}" != "mirror" ]; then
     usage
 fi
 
@@ -167,6 +175,11 @@ fi
 # if we are updating a repo
 if [ "${COMMAND}" == "update" ]; then
     update
+fi
+
+# if we are updating a repo
+if [ "${COMMAND}" == "mirror" ]; then
+    mirror
 fi
 
 # done

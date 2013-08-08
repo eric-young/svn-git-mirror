@@ -21,10 +21,15 @@ First, a workbench needs to be initialized. This workbench then becomes the stag
 pushing them to git. From a command line, run:
 
    `svn-git-mirror init -s <subversion_repo_url> -g <git_repo_url> -d <workbench_directory>`
+
+Next, whenever you would like to update the workbench with svn changes:
+
+   `svn-git-mirror update -d <workbech_directory>`
    
 Next, whenever you would like to push changes to git, simple run:
 
-   `svn-git-mirror update -d <workbech_directory>`
+   `svn-git-mirror mirror -d <workbech_directory>`
+  
    
 To see the full list of arguments supported, run
 
